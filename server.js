@@ -12,7 +12,7 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---- 簡易キャッシュ (10分TTL) ----
+// ---- メモリキャッシュ (10分TTL、YouTube字幕用) ----
 const cache = new Map();
 function cacheGet(key) {
   const item = cache.get(key);
@@ -22,6 +22,24 @@ function cacheGet(key) {
 }
 function cacheSet(key, data, ttlMs = 600_000) {
   cache.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
+// ---- 永続キャッシュ (ファイル保存、Whisper文字起こし用) ----
+const CACHE_DIR = path.join(__dirname, 'cache');
+if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR);
+
+function persistentGet(videoId) {
+  const filePath = path.join(CACHE_DIR, `${videoId}.json`);
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function persistentSet(videoId, data) {
+  const filePath = path.join(CACHE_DIR, `${videoId}.json`);
+  fs.writeFileSync(filePath, JSON.stringify(data), 'utf8');
 }
 
 // ---- kuromoji 初期化 ----
@@ -320,10 +338,12 @@ app.post('/api/transcribe', async (req, res) => {
     });
   }
 
-  // キャッシュ確認
-  const cacheKey = `whisper_${videoId}`;
-  const cached = cacheGet(cacheKey);
-  if (cached) return res.json(cached);
+  // 永続キャッシュ確認 (一度文字起こしした動画はファイルから返す → 無料)
+  const cachedFile = persistentGet(videoId);
+  if (cachedFile) {
+    console.log(`[cache hit] ${videoId}`);
+    return res.json(cachedFile);
+  }
 
   const tmpPath = path.join(os.tmpdir(), `ytcc_${videoId}.mp3`);
 
@@ -357,7 +377,7 @@ app.post('/api/transcribe', async (req, res) => {
     }
 
     const result = buildAllModes(rawCaptions, 'Whisper 文字起こし');
-    cacheSet(cacheKey, result);
+    persistentSet(videoId, result);   // ← ファイルに永続保存 (以後は無料)
     res.json(result);
 
   } catch (err) {
