@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ひらがな字幕 - YouTube</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">ひらがな字幕</h1>
+    <p class="subtitle">YouTubeの動画にひらがなで字幕をつけるよ</p>
+
+    <!-- URL 入力 -->
+    <div class="input-row">
+      <input
+        id="url-input"
+        type="text"
+        placeholder="YouTubeのURLをはりつけてね"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="load-btn" class="btn btn-primary">みる</button>
+    </div>
+
+    <!-- モード選択 -->
+    <div class="mode-bar" id="mode-bar" style="display:none">
+      <button class="mode-btn active" data-mode="hiragana">ひらがな</button>
+      <button class="mode-btn" data-mode="furigana">ふりがな</button>
+      <button class="mode-btn" data-mode="katakana">カタカナ</button>
+      <button class="mode-btn" data-mode="original">もとの字</button>
+      <span class="size-controls">
+        <button class="size-btn" id="size-down" title="文字を小さく">A-</button>
+        <button class="size-btn" id="size-up"   title="文字を大きく">A+</button>
+      </span>
+    </div>
+
+    <!-- プレイヤー + 字幕オーバーレイ -->
+    <div class="player-wrapper" id="player-wrapper" style="display:none">
+      <div id="player"></div>
+      <div id="subtitle-overlay" class="subtitle-overlay hidden">
+        <div id="subtitle-text" class="subtitle-text"></div>
+      </div>
+    </div>
+
+    <!-- ステータス -->
+    <div id="status" class="status"></div>
+  </div>
+
+  <!-- YouTube IFrame API -->
+  <script>
+    var tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>

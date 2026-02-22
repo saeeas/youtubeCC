@@ -1,0 +1,205 @@
+/* ---- リセット & ベース ---- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent: #e84393;
+  --accent2: #7c3aed;
+  --bg: #0f0f1a;
+  --surface: #1c1c30;
+  --surface2: #252540;
+  --text: #f0eeff;
+  --muted: #8888aa;
+  --sub-bg: rgba(10, 10, 20, 0.82);
+  --sub-color: #ffffff;
+  --sub-size: 28px;
+}
+
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Meiryo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 16px 48px;
+}
+
+/* ---- レイアウト ---- */
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ---- タイトル ---- */
+.title {
+  text-align: center;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+/* ---- URL 入力欄 ---- */
+.input-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+#url-input {
+  flex: 1;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 2px solid var(--surface2);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#url-input:focus {
+  border-color: var(--accent);
+}
+
+/* ---- ボタン共通 ---- */
+.btn {
+  padding: 14px 22px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- モードバー ---- */
+.mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.mode-btn {
+  padding: 9px 20px;
+  border: 2px solid var(--surface2);
+  border-radius: 24px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all 0.18s;
+}
+.mode-btn:hover { border-color: var(--accent); color: var(--text); }
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent;
+  color: #fff;
+}
+
+/* ---- テキストサイズボタン ---- */
+.size-controls { margin-left: auto; display: flex; gap: 6px; }
+.size-btn {
+  padding: 7px 14px;
+  border: 2px solid var(--surface2);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: border-color 0.15s;
+}
+.size-btn:hover { border-color: var(--accent2); color: var(--text); }
+
+/* ---- プレイヤー ---- */
+.player-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 */
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+}
+
+#player {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- 字幕オーバーレイ ---- */
+.subtitle-overlay {
+  position: absolute;
+  bottom: 64px;   /* YouTube コントロールバーより上 */
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+  padding: 0 8%;
+  transition: opacity 0.15s;
+}
+.subtitle-overlay.hidden { opacity: 0; }
+
+.subtitle-text {
+  display: inline-block;
+  background: var(--sub-bg);
+  color: var(--sub-color);
+  font-size: var(--sub-size);
+  font-weight: 700;
+  padding: 8px 20px 10px;
+  border-radius: 8px;
+  line-height: 1.8;
+  max-width: 100%;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+}
+
+/* ---- ふりがな (ruby) スタイル ---- */
+ruby { display: inline ruby; }
+rt {
+  font-size: 0.45em;
+  font-weight: 400;
+  color: #ffe066;
+  letter-spacing: 0.02em;
+}
+
+/* ---- ステータスメッセージ ---- */
+.status {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--muted);
+  min-height: 1.4em;
+  white-space: pre-line;
+}
+.status.error { color: #f87171; }
+.status.ok    { color: #4ade80; }
+
+/* ---- レスポンシブ ---- */
+@media (max-width: 480px) {
+  :root { --sub-size: 20px; }
+  .mode-bar { gap: 6px; }
+  .mode-btn { padding: 7px 14px; font-size: 0.9rem; }
+  .size-controls { margin-left: 0; width: 100%; justify-content: flex-end; }
+}

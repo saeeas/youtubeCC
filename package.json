@@ -1,0 +1,15 @@
+{
+  "name": "youtube-hiragana-cc",
+  "version": "1.0.0",
+  "description": "YouTubeの動画にひらがな・ふりがな字幕をつけるアプリ",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "express": "^4.18.0",
+    "kuromoji": "^0.1.2"
+  }
+}
