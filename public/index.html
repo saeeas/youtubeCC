@@ -53,8 +53,9 @@
 
       <!-- タブ -->
       <div class="tab-bar">
-        <button class="tab-btn active" data-tab="whisper">A. 音声から自動文字起こし</button>
-        <button class="tab-btn" data-tab="lrc">C. LRC歌詞を貼り付ける</button>
+        <button class="tab-btn active" data-tab="whisper">A. 音声→Whisper</button>
+        <button class="tab-btn" data-tab="lrc">C. LRC貼り付け</button>
+        <button class="tab-btn" data-tab="ocr">D. 映像OCR</button>
       </div>
 
       <!-- Whisper タブ -->
@@ -62,8 +63,7 @@
         <p class="tab-desc">
           <code>yt-dlp</code> で音声をダウンロードして OpenAI Whisper で文字起こしします。<br>
           <strong>必要なもの:</strong>
-          <code>yt-dlp</code> (インストール済みであること) と
-          プロジェクトの <code>.env</code> に <code>OPENAI_API_KEY=sk-...</code>
+          <code>yt-dlp</code> と プロジェクトの <code>.env</code> に <code>OPENAI_API_KEY=sk-...</code>
         </p>
         <p class="tab-desc cost-note">費用の目安: 4分の曲 ≈ $0.02 (約3円) ※自分のAPIキーを使用</p>
         <button id="whisper-btn" class="btn btn-whisper">音声から文字起こしをはじめる</button>
@@ -84,6 +84,23 @@
           rows="8"
         ></textarea>
         <button id="lrc-btn" class="btn btn-primary">よみこむ</button>
+      </div>
+
+      <!-- OCR タブ -->
+      <div class="tab-content" id="tab-ocr" style="display:none">
+        <p class="tab-desc">
+          映像フレームを画像認識 (Tesseract OCR) して字幕を取り出します。<br>
+          MVに歌詞テキストが映像に埋め込まれている場合に試せます。<br>
+          <strong>必要なもの:</strong>
+          <code>yt-dlp</code> / <code>ffmpeg</code> / <code>tesseract</code> (+ 日本語パック)
+        </p>
+        <p class="tab-desc cost-note">無料 ※ローカル処理・課金なし。4分の曲で1〜3分かかります</p>
+        <div class="install-hint">
+          <code>brew install tesseract tesseract-lang</code>　または<br>
+          <code>apt install tesseract-ocr tesseract-ocr-jpn</code>
+        </div>
+        <button id="ocr-btn" class="btn btn-ocr">映像から文字認識をはじめる</button>
+        <div id="ocr-progress" class="progress-msg" style="display:none"></div>
       </div>
     </div>
   </div>

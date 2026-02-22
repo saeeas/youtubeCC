@@ -25,10 +25,12 @@ const statusEl       = document.getElementById('status');
 const sizeUpBtn      = document.getElementById('size-up');
 const sizeDownBtn    = document.getElementById('size-down');
 const fallbackPanel  = document.getElementById('fallback-panel');
-const whisperBtn     = document.getElementById('whisper-btn');
+const whisperBtn      = document.getElementById('whisper-btn');
 const whisperProgress = document.getElementById('whisper-progress');
-const lrcInput       = document.getElementById('lrc-input');
-const lrcBtn         = document.getElementById('lrc-btn');
+const lrcInput        = document.getElementById('lrc-input');
+const lrcBtn          = document.getElementById('lrc-btn');
+const ocrBtn          = document.getElementById('ocr-btn');
+const ocrProgress     = document.getElementById('ocr-progress');
 
 // ---- YouTube IFrame API ----
 window.onYouTubeIframeAPIReady = function () {
@@ -159,6 +161,38 @@ async function startWhisper() {
   }
 }
 
+// ---- OCR文字起こし ----
+async function startOcr() {
+  if (!currentVideoId) return;
+
+  ocrBtn.disabled = true;
+  ocrProgress.style.display = 'block';
+  ocrProgress.textContent =
+    '映像をダウンロードしてフレームを解析中...\n' +
+    '(yt-dlp + ffmpeg + Tesseract で処理します。1〜3分かかります)';
+
+  try {
+    const res = await fetch('/api/ocr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoId: currentVideoId }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      ocrProgress.textContent = 'エラー: ' + data.error;
+      return;
+    }
+
+    ocrProgress.style.display = 'none';
+    applyResult(data);
+  } catch (err) {
+    ocrProgress.textContent = 'ネットワークエラー: ' + err.message;
+  } finally {
+    ocrBtn.disabled = false;
+  }
+}
+
 // ---- LRC読み込み ----
 async function loadLrc() {
   const lrc = lrcInput.value.trim();
@@ -263,3 +297,4 @@ sizeUpBtn.addEventListener('click',   () => updateFontSize(+4));
 sizeDownBtn.addEventListener('click', () => updateFontSize(-4));
 whisperBtn.addEventListener('click', startWhisper);
 lrcBtn.addEventListener('click', loadLrc);
+ocrBtn.addEventListener('click', startOcr);

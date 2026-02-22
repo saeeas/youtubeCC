@@ -258,6 +258,24 @@ rt {
   background: linear-gradient(135deg, #f59e0b, #ef4444);
   color: #fff;
 }
+.btn-ocr {
+  background: linear-gradient(135deg, #10b981, #0ea5e9);
+  color: #fff;
+}
+
+.install-hint {
+  background: var(--surface2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.83rem;
+  color: #a78bfa;
+  line-height: 2;
+  margin-bottom: 14px;
+}
+.install-hint code {
+  background: transparent;
+  font-family: 'Consolas', monospace;
+}
 
 .progress-msg {
   margin-top: 12px;

@@ -321,6 +321,175 @@ app.post('/api/lrc', (req, res) => {
   res.json(buildAllModes(rawCaptions, 'LRC歌詞'));
 });
 
+// ---- 動画ダウンロード (OCR用、映像あり) ----
+function downloadVideo(videoId, outPath) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('yt-dlp', [
+      '-f', 'best[height<=480]/best',
+      '--no-playlist',
+      '--merge-output-format', 'mp4',
+      '-o', outPath,
+      `https://www.youtube.com/watch?v=${videoId}`,
+    ]);
+    const errLines = [];
+    proc.stderr.on('data', d => errLines.push(d.toString()));
+    proc.on('error', err => {
+      if (err.code === 'ENOENT') reject(new Error('yt-dlp がインストールされていません。'));
+      else reject(err);
+    });
+    proc.on('close', code => {
+      if (code === 0) resolve();
+      else reject(new Error('yt-dlp 失敗: ' + errLines.slice(-3).join(' ')));
+    });
+  });
+}
+
+// ---- フレーム抽出 (ffmpeg) ----
+const OCR_FPS = 0.5;   // 2秒に1フレーム
+
+function extractFrames(videoPath, framesDir) {
+  return new Promise((resolve, reject) => {
+    // 下35%にクロップ (字幕が出やすいエリア)、0.5fps
+    const proc = spawn('ffmpeg', [
+      '-i', videoPath,
+      '-vf', `crop=iw:ih*0.35:0:ih*0.65,fps=${OCR_FPS}`,
+      '-q:v', '3',
+      '-y',
+      path.join(framesDir, 'frame_%04d.jpg'),
+    ]);
+    const errLines = [];
+    proc.stderr.on('data', d => errLines.push(d.toString()));
+    proc.on('error', err => {
+      if (err.code === 'ENOENT') {
+        reject(new Error('ffmpeg がインストールされていません。brew install ffmpeg などで入れてください。'));
+      } else {
+        reject(err);
+      }
+    });
+    proc.on('close', code => {
+      if (code === 0) resolve();
+      else reject(new Error('ffmpeg 失敗: ' + errLines.slice(-3).join(' ')));
+    });
+  });
+}
+
+// ---- テキスト類似度 (OCRノイズ除去用) ----
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  const prev = Array.from({ length: n + 1 }, (_, i) => i);
+  const curr = new Array(n + 1);
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      curr[j] = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j], curr[j - 1], prev[j - 1]);
+    }
+    prev.splice(0, n + 1, ...curr);
+  }
+  return prev[n];
+}
+
+function isSimilarText(a, b) {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const maxLen = Math.max(a.length, b.length);
+  return editDistance(a, b) / maxLen < 0.25;
+}
+
+// ---- OCR処理 ----
+async function ocrFrames(framesDir) {
+  const tesseract = require('node-tesseract-ocr');
+  const frames = fs.readdirSync(framesDir)
+    .filter(f => /^frame_\d+\.jpg$/.test(f))
+    .sort();
+
+  const BATCH = 4;
+  const rawResults = [];
+
+  for (let i = 0; i < frames.length; i += BATCH) {
+    const batch = frames.slice(i, i + BATCH);
+    const results = await Promise.all(
+      batch.map(async frame => {
+        const frameNum = parseInt(frame.match(/frame_(\d+)\.jpg/)[1]);
+        const timeSec = (frameNum - 1) / OCR_FPS;
+        try {
+          const text = await tesseract.recognize(
+            path.join(framesDir, frame),
+            { lang: 'jpn', oem: 1, psm: 6 }
+          );
+          const cleaned = text.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+          return { time: timeSec, text: cleaned };
+        } catch {
+          return { time: timeSec, text: '' };
+        }
+      })
+    );
+    rawResults.push(...results);
+  }
+
+  rawResults.sort((a, b) => a.time - b.time);
+
+  // 連続する同じ/似たテキストをまとめて1字幕にする
+  const captions = [];
+  let current = null;
+  for (const r of rawResults) {
+    if (!r.text) {
+      if (current) { captions.push(current); current = null; }
+      continue;
+    }
+    if (current && isSimilarText(current.text, r.text)) {
+      current.duration = (r.time - current.start) + (1 / OCR_FPS);
+    } else {
+      if (current) captions.push(current);
+      current = { start: r.time, duration: 1 / OCR_FPS, text: r.text };
+    }
+  }
+  if (current) captions.push(current);
+
+  return captions;
+}
+
+// ---- API: OCR文字起こし ----
+app.post('/api/ocr', async (req, res) => {
+  const { videoId } = req.body;
+  if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+    return res.status(400).json({ error: 'videoIdが正しくありません' });
+  }
+
+  const cachedFile = persistentGet(`ocr_${videoId}`);
+  if (cachedFile) {
+    console.log(`[ocr cache hit] ${videoId}`);
+    return res.json(cachedFile);
+  }
+
+  const tmpDir  = path.join(os.tmpdir(), `ytcc_ocr_${videoId}`);
+  const videoPath = path.join(tmpDir, 'video.mp4');
+  const framesDir = path.join(tmpDir, 'frames');
+
+  try {
+    fs.mkdirSync(framesDir, { recursive: true });
+
+    await downloadVideo(videoId, videoPath);
+    await extractFrames(videoPath, framesDir);
+
+    const rawCaptions = await ocrFrames(framesDir);
+    if (rawCaptions.length === 0) {
+      return res.status(404).json({ error: '字幕テキストが検出できませんでした' });
+    }
+
+    const result = buildAllModes(rawCaptions, 'OCR 文字認識');
+    persistentSet(`ocr_${videoId}`, result);
+    res.json(result);
+
+  } catch (err) {
+    console.error('OCR error:', err.message);
+    res.status(500).json({ error: err.message });
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+});
+
 // ---- API: Whisper文字起こし ----
 app.post('/api/transcribe', async (req, res) => {
   const { videoId } = req.body;
