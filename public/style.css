@@ -22,7 +22,6 @@ body {
   padding: 24px 16px 48px;
 }
 
-/* ---- レイアウト ---- */
 .container {
   max-width: 860px;
   margin: 0 auto;
@@ -39,7 +38,6 @@ body {
   background-clip: text;
   margin-bottom: 6px;
 }
-
 .subtitle {
   text-align: center;
   color: var(--muted);
@@ -53,7 +51,6 @@ body {
   gap: 10px;
   margin-bottom: 14px;
 }
-
 #url-input {
   flex: 1;
   padding: 14px 16px;
@@ -65,13 +62,11 @@ body {
   outline: none;
   transition: border-color 0.2s;
 }
-#url-input:focus {
-  border-color: var(--accent);
-}
+#url-input:focus { border-color: var(--accent); }
 
 /* ---- ボタン共通 ---- */
 .btn {
-  padding: 14px 22px;
+  padding: 13px 22px;
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -95,7 +90,6 @@ body {
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
-
 .mode-btn {
   padding: 9px 20px;
   border: 2px solid var(--surface2);
@@ -113,8 +107,6 @@ body {
   border-color: transparent;
   color: #fff;
 }
-
-/* ---- テキストサイズボタン ---- */
 .size-controls { margin-left: auto; display: flex; gap: 6px; }
 .size-btn {
   padding: 7px 14px;
@@ -133,13 +125,12 @@ body {
 .player-wrapper {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%; /* 16:9 */
+  padding-bottom: 56.25%;
   background: #000;
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 8px 40px rgba(0,0,0,0.6);
 }
-
 #player {
   position: absolute;
   inset: 0;
@@ -150,9 +141,8 @@ body {
 /* ---- 字幕オーバーレイ ---- */
 .subtitle-overlay {
   position: absolute;
-  bottom: 64px;   /* YouTube コントロールバーより上 */
-  left: 0;
-  right: 0;
+  bottom: 64px;
+  left: 0; right: 0;
   text-align: center;
   pointer-events: none;
   z-index: 10;
@@ -160,7 +150,6 @@ body {
   transition: opacity 0.15s;
 }
 .subtitle-overlay.hidden { opacity: 0; }
-
 .subtitle-text {
   display: inline-block;
   background: var(--sub-bg);
@@ -175,16 +164,15 @@ body {
   backdrop-filter: blur(4px);
 }
 
-/* ---- ふりがな (ruby) スタイル ---- */
+/* ふりがな */
 ruby { display: inline ruby; }
 rt {
   font-size: 0.45em;
   font-weight: 400;
   color: #ffe066;
-  letter-spacing: 0.02em;
 }
 
-/* ---- ステータスメッセージ ---- */
+/* ---- ステータス ---- */
 .status {
   margin-top: 14px;
   text-align: center;
@@ -196,10 +184,122 @@ rt {
 .status.error { color: #f87171; }
 .status.ok    { color: #4ade80; }
 
+/* ---- フォールバックパネル ---- */
+.fallback-panel {
+  margin-top: 24px;
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  border-radius: 16px;
+  padding: 24px;
+}
+.fallback-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 8px;
+}
+.fallback-desc {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+/* ---- タブ ---- */
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  border-bottom: 2px solid var(--surface2);
+  padding-bottom: 0;
+}
+.tab-btn {
+  padding: 9px 18px;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: -2px;
+  border-radius: 4px 4px 0 0;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tab-content { animation: fadeIn 0.15s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.tab-desc {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+.tab-desc code {
+  background: var(--surface2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: #a78bfa;
+}
+.cost-note {
+  color: #6ee7b7;
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+}
+
+.btn-whisper {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+}
+
+.progress-msg {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: #fbbf24;
+  white-space: pre-line;
+  line-height: 1.6;
+}
+
+/* ---- LRC 入力 ---- */
+.lrc-example {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.lrc-example code {
+  background: var(--surface2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #a78bfa;
+}
+.lrc-textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid #3a3a60;
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Consolas', monospace;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  margin-bottom: 10px;
+  transition: border-color 0.2s;
+}
+.lrc-textarea:focus { border-color: var(--accent2); }
+
 /* ---- レスポンシブ ---- */
 @media (max-width: 480px) {
   :root { --sub-size: 20px; }
-  .mode-bar { gap: 6px; }
   .mode-btn { padding: 7px 14px; font-size: 0.9rem; }
   .size-controls { margin-left: 0; width: 100%; justify-content: flex-end; }
+  .tab-btn { padding: 8px 12px; font-size: 0.82rem; }
 }

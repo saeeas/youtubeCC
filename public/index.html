@@ -23,15 +23,15 @@
       <button id="load-btn" class="btn btn-primary">みる</button>
     </div>
 
-    <!-- モード選択 -->
+    <!-- モード選択 (字幕がある場合) -->
     <div class="mode-bar" id="mode-bar" style="display:none">
       <button class="mode-btn active" data-mode="hiragana">ひらがな</button>
       <button class="mode-btn" data-mode="furigana">ふりがな</button>
       <button class="mode-btn" data-mode="katakana">カタカナ</button>
       <button class="mode-btn" data-mode="original">もとの字</button>
       <span class="size-controls">
-        <button class="size-btn" id="size-down" title="文字を小さく">A-</button>
-        <button class="size-btn" id="size-up"   title="文字を大きく">A+</button>
+        <button class="size-btn" id="size-down">A-</button>
+        <button class="size-btn" id="size-up">A+</button>
       </span>
     </div>
 
@@ -45,9 +45,49 @@
 
     <!-- ステータス -->
     <div id="status" class="status"></div>
+
+    <!-- 字幕なし → フォールバックパネル -->
+    <div id="fallback-panel" class="fallback-panel" style="display:none">
+      <p class="fallback-title">字幕がみつかりませんでした</p>
+      <p class="fallback-desc">MVは画像に歌詞が入ってるから字幕がないことが多いよ。<br>下の方法で字幕をつけられるよ。</p>
+
+      <!-- タブ -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="whisper">A. 音声から自動文字起こし</button>
+        <button class="tab-btn" data-tab="lrc">C. LRC歌詞を貼り付ける</button>
+      </div>
+
+      <!-- Whisper タブ -->
+      <div class="tab-content" id="tab-whisper">
+        <p class="tab-desc">
+          <code>yt-dlp</code> で音声をダウンロードして OpenAI Whisper で文字起こしします。<br>
+          <strong>必要なもの:</strong>
+          <code>yt-dlp</code> (インストール済みであること) と
+          プロジェクトの <code>.env</code> に <code>OPENAI_API_KEY=sk-...</code>
+        </p>
+        <p class="tab-desc cost-note">費用の目安: 4分の曲 ≈ $0.02 (約3円) ※自分のAPIキーを使用</p>
+        <button id="whisper-btn" class="btn btn-whisper">音声から文字起こしをはじめる</button>
+        <div id="whisper-progress" class="progress-msg" style="display:none"></div>
+      </div>
+
+      <!-- LRC タブ -->
+      <div class="tab-content" id="tab-lrc" style="display:none">
+        <p class="tab-desc">
+          LRC形式の歌詞を貼り付けてください。<br>
+          J-Lyrics / UtaNet 等からコピーした LRC テキストが使えます。
+        </p>
+        <div class="lrc-example">例: <code>[00:12.50]夜を越えて　輝いてる</code></div>
+        <textarea
+          id="lrc-input"
+          class="lrc-textarea"
+          placeholder="[00:01.00]ここに歌詞を貼り付けてね&#10;[00:05.20]LRC形式でタイムスタンプがある歌詞"
+          rows="8"
+        ></textarea>
+        <button id="lrc-btn" class="btn btn-primary">よみこむ</button>
+      </div>
+    </div>
   </div>
 
-  <!-- YouTube IFrame API -->
   <script>
     var tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
