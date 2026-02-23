@@ -27,6 +27,8 @@ const sizeDownBtn    = document.getElementById('size-down');
 const fallbackPanel  = document.getElementById('fallback-panel');
 const whisperBtn      = document.getElementById('whisper-btn');
 const whisperProgress = document.getElementById('whisper-progress');
+const openaiKeyInput  = document.getElementById('openai-key-input');
+const showKeyCheck    = document.getElementById('show-key-check');
 const lrcInput        = document.getElementById('lrc-input');
 const lrcBtn          = document.getElementById('lrc-btn');
 const ocrBtn          = document.getElementById('ocr-btn');
@@ -134,16 +136,21 @@ async function loadCaptions(videoId) {
 async function startWhisper() {
   if (!currentVideoId) return;
 
+  const apiKey = openaiKeyInput ? openaiKeyInput.value.trim() : '';
+
   whisperBtn.disabled = true;
   whisperProgress.style.display = 'block';
   whisperProgress.textContent =
     '音声をダウンロード中...\n(yt-dlp + Whisper APIで処理します。1〜3分かかることがあります)';
 
   try {
+    const body = { videoId: currentVideoId };
+    if (apiKey) body.apiKey = apiKey;
+
     const res = await fetch('/api/transcribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId: currentVideoId }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
 
@@ -296,5 +303,10 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 sizeUpBtn.addEventListener('click',   () => updateFontSize(+4));
 sizeDownBtn.addEventListener('click', () => updateFontSize(-4));
 whisperBtn.addEventListener('click', startWhisper);
+if (showKeyCheck) {
+  showKeyCheck.addEventListener('change', () => {
+    openaiKeyInput.type = showKeyCheck.checked ? 'text' : 'password';
+  });
+}
 lrcBtn.addEventListener('click', loadLrc);
 ocrBtn.addEventListener('click', startOcr);

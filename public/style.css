@@ -277,6 +277,37 @@ rt {
   font-family: 'Consolas', monospace;
 }
 
+.api-key-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.api-key-row input[type="text"],
+.api-key-row input[type="password"] {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid #3a3a60;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: 'Consolas', monospace;
+  outline: none;
+}
+.api-key-row input:focus {
+  border-color: var(--accent);
+}
+.show-key-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .progress-msg {
   margin-top: 12px;
   font-size: 0.9rem;

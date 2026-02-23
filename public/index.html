@@ -62,10 +62,21 @@
       <div class="tab-content" id="tab-whisper">
         <p class="tab-desc">
           <code>yt-dlp</code> で音声をダウンロードして OpenAI Whisper で文字起こしします。<br>
-          <strong>必要なもの:</strong>
-          <code>yt-dlp</code> と プロジェクトの <code>.env</code> に <code>OPENAI_API_KEY=sk-...</code>
+          <strong>必要なもの:</strong> <code>yt-dlp</code> と OpenAI API キー
         </p>
         <p class="tab-desc cost-note">費用の目安: 4分の曲 ≈ $0.02 (約3円) ※自分のAPIキーを使用</p>
+        <div class="api-key-row">
+          <input
+            id="openai-key-input"
+            type="password"
+            placeholder="OpenAI API キー (sk-...)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <label class="show-key-label">
+            <input type="checkbox" id="show-key-check"> 表示
+          </label>
+        </div>
         <button id="whisper-btn" class="btn btn-whisper">音声から文字起こしをはじめる</button>
         <div id="whisper-progress" class="progress-msg" style="display:none"></div>
       </div>

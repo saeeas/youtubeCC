@@ -6,7 +6,28 @@ const kuromoji = require('kuromoji');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
+
+// ---- yt-dlp パス検索 ----
+function findYtDlp() {
+  try {
+    return execSync('which yt-dlp 2>/dev/null || command -v yt-dlp 2>/dev/null').toString().trim();
+  } catch {}
+  const candidates = [
+    '/opt/homebrew/bin/yt-dlp',
+    '/usr/local/bin/yt-dlp',
+    path.join(os.homedir(), '.local/bin/yt-dlp'),
+    path.join(os.homedir(), 'Library/Python/3.12/bin/yt-dlp'),
+    path.join(os.homedir(), 'Library/Python/3.11/bin/yt-dlp'),
+    path.join(os.homedir(), 'Library/Python/3.10/bin/yt-dlp'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return 'yt-dlp';
+}
+const YT_DLP = findYtDlp();
+console.log(`[OK] yt-dlp: ${YT_DLP}`);
 
 const app = express();
 app.use(express.json());
@@ -235,7 +256,7 @@ function parseLrc(lrcText) {
 // ---- yt-dlp ラッパー ----
 function downloadAudio(videoId, outPath) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', [
+    const proc = spawn(YT_DLP, [
       '-x',
       '--audio-format', 'mp3',
       '--audio-quality', '5',
@@ -324,7 +345,7 @@ app.post('/api/lrc', (req, res) => {
 // ---- 動画ダウンロード (OCR用、映像あり) ----
 function downloadVideo(videoId, outPath) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', [
+    const proc = spawn(YT_DLP, [
       '-f', 'best[height<=480]/best',
       '--no-playlist',
       '--merge-output-format', 'mp4',
@@ -492,18 +513,16 @@ app.post('/api/ocr', async (req, res) => {
 
 // ---- API: Whisper文字起こし ----
 app.post('/api/transcribe', async (req, res) => {
-  const { videoId } = req.body;
+  const { videoId, apiKey } = req.body;
 
   if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
     return res.status(400).json({ error: 'videoIdが正しくありません' });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
+  const resolvedApiKey = apiKey || process.env.OPENAI_API_KEY;
+  if (!resolvedApiKey) {
     return res.status(400).json({
-      error:
-        'OPENAI_API_KEY が設定されていません。\n' +
-        'プロジェクトフォルダに .env ファイルを作って\n' +
-        'OPENAI_API_KEY=sk-... と書いてください。',
+      error: 'OpenAI API キーが必要です。入力欄に sk-... を入力してください。',
     });
   }
 
@@ -522,7 +541,7 @@ app.post('/api/transcribe', async (req, res) => {
 
     // 2. Whisper API へ送信
     const { OpenAI } = require('openai');
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({ apiKey: resolvedApiKey });
 
     const transcription = await openai.audio.transcriptions.create({
       file: fs.createReadStream(tmpPath),
