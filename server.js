@@ -261,7 +261,7 @@ function downloadAudio(videoId, outPath) {
       '--audio-format', 'mp3',
       '--audio-quality', '5',
       '--no-playlist',
-      '--extractor-args', 'youtube:player_client=android,tv_embedded',
+      '--extractor-args', 'youtube:player_client=mweb,web_embedded',
       '-o', outPath,
       `https://www.youtube.com/watch?v=${videoId}`,
     ]);
@@ -282,7 +282,14 @@ function downloadAudio(videoId, outPath) {
 
     proc.on('close', code => {
       if (code === 0) resolve();
-      else reject(new Error('yt-dlp 失敗: ' + errLines.slice(-3).join(' ')));
+      else {
+        const allErr = errLines.join(' ');
+        const isPy39 = allErr.includes('Python version 3.9');
+        const msg = isPy39
+          ? 'yt-dlp 失敗: Python 3.10以上が必要です。\n  python3.10 -m pip install -U yt-dlp  を実行してください。'
+          : 'yt-dlp 失敗: ' + errLines.slice(-3).join(' ');
+        reject(new Error(msg));
+      }
     });
   });
 }
@@ -350,7 +357,7 @@ function downloadVideo(videoId, outPath) {
       '-f', 'best[height<=480]/best',
       '--no-playlist',
       '--merge-output-format', 'mp4',
-      '--extractor-args', 'youtube:player_client=android,tv_embedded',
+      '--extractor-args', 'youtube:player_client=mweb,web_embedded',
       '-o', outPath,
       `https://www.youtube.com/watch?v=${videoId}`,
     ]);
