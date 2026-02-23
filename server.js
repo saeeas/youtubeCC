@@ -379,10 +379,10 @@ const OCR_FPS = 0.5;   // 2秒に1フレーム
 
 function extractFrames(videoPath, framesDir) {
   return new Promise((resolve, reject) => {
-    // 下35%にクロップ (字幕が出やすいエリア)、0.5fps
+    // 字幕が上・下どちらにあっても対応できるようクロップなしで全体取得、0.5fps
     const proc = spawn('ffmpeg', [
       '-i', videoPath,
-      '-vf', `crop=iw:ih*0.35:0:ih*0.65,fps=${OCR_FPS}`,
+      '-vf', `fps=${OCR_FPS}`,
       '-q:v', '3',
       '-y',
       path.join(framesDir, 'frame_%04d.jpg'),
@@ -444,10 +444,19 @@ async function ocrFrames(framesDir) {
         const frameNum = parseInt(frame.match(/frame_(\d+)\.jpg/)[1]);
         const timeSec = (frameNum - 1) / OCR_FPS;
         try {
-          const text = await tesseract.recognize(
-            path.join(framesDir, frame),
-            { lang: 'jpn', oem: 1, psm: 6 }
-          );
+          // 縦書きを優先、失敗時は横書きにフォールバック
+          let text;
+          try {
+            text = await tesseract.recognize(
+              path.join(framesDir, frame),
+              { lang: 'jpn_vert', oem: 1, psm: 5 }
+            );
+          } catch {
+            text = await tesseract.recognize(
+              path.join(framesDir, frame),
+              { lang: 'jpn', oem: 1, psm: 3 }
+            );
+          }
           const cleaned = text.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
           return { time: timeSec, text: cleaned };
         } catch {
