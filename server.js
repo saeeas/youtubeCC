@@ -294,6 +294,41 @@ function downloadAudio(videoId, outPath) {
   });
 }
 
+// ---- yt-dlp で字幕URLを取得 (HTMLスクレイピングのフォールバック) ----
+function fetchCaptionViaYtDlp(videoId) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(YT_DLP, [
+      '--dump-json',
+      '--no-playlist',
+      '--extractor-args', 'youtube:player_client=mweb,web_embedded',
+      `https://www.youtube.com/watch?v=${videoId}`,
+    ]);
+    const stdout = [];
+    const stderr = [];
+    proc.stdout.on('data', d => stdout.push(d));
+    proc.stderr.on('data', d => stderr.push(d.toString()));
+    proc.on('error', reject);
+    proc.on('close', code => {
+      if (code !== 0) {
+        reject(new Error('yt-dlp 失敗: ' + stderr.slice(-2).join(' ')));
+        return;
+      }
+      try {
+        const info = JSON.parse(Buffer.concat(stdout).toString());
+        const manualJa = (info.subtitles?.ja || []);
+        const autoJa   = (info.automatic_captions?.ja || []);
+        const isAuto   = manualJa.length === 0;
+        const entries  = isAuto ? autoJa : manualJa;
+        const entry    = entries.find(s => s.ext === 'json3') || entries[0];
+        if (!entry) { reject(new Error('NO_CAPTIONS')); return; }
+        resolve({ url: entry.url, isAuto, trackName: isAuto ? '自動生成字幕' : '字幕' });
+      } catch (e) {
+        reject(new Error('JSON解析失敗: ' + e.message));
+      }
+    });
+  });
+}
+
 // ---- API: YouTube字幕 ----
 app.get('/api/captions', async (req, res) => {
   const { videoId } = req.query;
@@ -304,35 +339,47 @@ app.get('/api/captions', async (req, res) => {
   const cached = cacheGet(videoId);
   if (cached) return res.json(cached);
 
+  // 1. HTMLスクレイピングで試みる
+  let rawCaptions = null;
+  let trackName = '字幕';
   try {
     const tracks = await fetchCaptionTracks(videoId);
-    if (!tracks || tracks.length === 0) {
-      return res.status(404).json({ error: 'NO_CAPTIONS' });
+    if (tracks && tracks.length > 0) {
+      const jaTrack =
+        tracks.find(t => t.languageCode === 'ja' && !t.kind) ||
+        tracks.find(t => t.languageCode === 'ja') ||
+        tracks[0];
+      const captionData = await fetchCaptionData(jaTrack.baseUrl);
+      rawCaptions = parseCaptionEvents(captionData);
+      trackName = jaTrack.name?.simpleText || jaTrack.languageCode || '字幕';
     }
-
-    const jaTrack =
-      tracks.find(t => t.languageCode === 'ja' && !t.kind) ||
-      tracks.find(t => t.languageCode === 'ja') ||
-      tracks[0];
-
-    const captionData = await fetchCaptionData(jaTrack.baseUrl);
-    const rawCaptions = parseCaptionEvents(captionData);
-
-    if (rawCaptions.length === 0) {
-      return res.status(404).json({ error: 'NO_CAPTIONS' });
-    }
-
-    const result = buildAllModes(
-      rawCaptions,
-      jaTrack.name?.simpleText || jaTrack.languageCode || '字幕'
-    );
-
-    cacheSet(videoId, result);
-    res.json(result);
   } catch (err) {
-    console.error('captions error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.warn('HTML scraping failed, trying yt-dlp:', err.message);
   }
+
+  // 2. スクレイピング失敗 → yt-dlp フォールバック
+  if (!rawCaptions || rawCaptions.length === 0) {
+    try {
+      const { url, trackName: ytTrackName } = await fetchCaptionViaYtDlp(videoId);
+      const captionData = await fetchCaptionData(url);
+      rawCaptions = parseCaptionEvents(captionData);
+      trackName = ytTrackName;
+    } catch (err) {
+      if (err.message === 'NO_CAPTIONS') {
+        return res.status(404).json({ error: 'NO_CAPTIONS' });
+      }
+      console.error('yt-dlp captions error:', err.message);
+      return res.status(404).json({ error: 'NO_CAPTIONS' });
+    }
+  }
+
+  if (!rawCaptions || rawCaptions.length === 0) {
+    return res.status(404).json({ error: 'NO_CAPTIONS' });
+  }
+
+  const result = buildAllModes(rawCaptions, trackName);
+  cacheSet(videoId, result);
+  res.json(result);
 });
 
 // ---- API: LRC変換 ----
