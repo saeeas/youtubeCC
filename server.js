@@ -379,11 +379,11 @@ const OCR_FPS = 0.5;   // 2秒に1フレーム
 
 function extractFrames(videoPath, framesDir) {
   return new Promise((resolve, reject) => {
-    // 字幕が上・下どちらにあっても対応できるようクロップなしで全体取得、0.5fps
+    // 2倍スケール + グレースケール + コントラスト強調でOCR精度向上
     const proc = spawn('ffmpeg', [
       '-i', videoPath,
-      '-vf', `fps=${OCR_FPS}`,
-      '-q:v', '3',
+      '-vf', `fps=${OCR_FPS},scale=iw*2:ih*2:flags=lanczos,format=gray,eq=contrast=1.8:brightness=0.05`,
+      '-q:v', '1',
       '-y',
       path.join(framesDir, 'frame_%04d.jpg'),
     ]);
