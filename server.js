@@ -261,7 +261,7 @@ function downloadAudio(videoId, outPath) {
       '--audio-format', 'mp3',
       '--audio-quality', '5',
       '--no-playlist',
-      '--extractor-args', 'youtube:player_client=ios,mweb',
+      '--extractor-args', 'youtube:player_client=android,tv_embedded',
       '-o', outPath,
       `https://www.youtube.com/watch?v=${videoId}`,
     ]);
@@ -350,7 +350,7 @@ function downloadVideo(videoId, outPath) {
       '-f', 'best[height<=480]/best',
       '--no-playlist',
       '--merge-output-format', 'mp4',
-      '--extractor-args', 'youtube:player_client=ios,mweb',
+      '--extractor-args', 'youtube:player_client=android,tv_embedded',
       '-o', outPath,
       `https://www.youtube.com/watch?v=${videoId}`,
     ]);
